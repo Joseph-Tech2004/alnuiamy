@@ -821,35 +821,14 @@ let currentSlide = 0;
 let slideTimer;
 
 // ============================================================
-// LOAD DATA FROM GOOGLE SHEETS
+// LOAD DATA FROM GOOGLE SHEETS VIA APPS SCRIPT
 // ============================================================
-const SHEET_TABS = { Products: '0', Banners: '1232359072', Settings: '1574914236' };
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjST8EG0reqb-lnP3gd-UODRmezcQLMb2fwGrulbnYnu1JG26-ycVxPxlY49CCj-LU/exec';
 
 async function loadSheet(sheetName) {
-  const gid = SHEET_TABS[sheetName] || '0';
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
-  const res = await fetch(url);
-  const text = await res.text();
-  const rows = text.trim().split('\n').map(r => parseCSVRow(r));
-  const headers = rows[0];
-  return rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h.trim()] = (row[i] || '').trim(); });
-    return obj;
-  });
-}
-
-function parseCSVRow(row) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < row.length; i++) {
-    if (row[i] === '"') { inQuotes = !inQuotes; }
-    else if (row[i] === ',' && !inQuotes) { result.push(current); current = ''; }
-    else { current += row[i]; }
-  }
-  result.push(current);
-  return result;
+  const res = await fetch(`${APPS_SCRIPT_URL}?sheet=${encodeURIComponent(sheetName)}`);
+  const data = await res.json();
+  return data;
 }
 
 async function loadAllData() {
