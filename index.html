@@ -823,17 +823,33 @@ let slideTimer;
 // ============================================================
 // LOAD DATA FROM GOOGLE SHEETS
 // ============================================================
+const SHEET_TABS = { Products: '0', Banners: '1232359072', Settings: '1574914236' };
+
 async function loadSheet(sheetName) {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+  const gid = SHEET_TABS[sheetName] || '0';
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
   const res = await fetch(url);
   const text = await res.text();
-  const json = JSON.parse(text.substr(47).slice(0, -2));
-  const cols = json.table.cols.map(c => c.label);
-  return json.table.rows.map(row => {
+  const rows = text.trim().split('\n').map(r => parseCSVRow(r));
+  const headers = rows[0];
+  return rows.slice(1).map(row => {
     const obj = {};
-    row.c.forEach((cell, i) => { obj[cols[i]] = cell ? cell.v : ''; });
+    headers.forEach((h, i) => { obj[h.trim()] = (row[i] || '').trim(); });
     return obj;
   });
+}
+
+function parseCSVRow(row) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < row.length; i++) {
+    if (row[i] === '"') { inQuotes = !inQuotes; }
+    else if (row[i] === ',' && !inQuotes) { result.push(current); current = ''; }
+    else { current += row[i]; }
+  }
+  result.push(current);
+  return result;
 }
 
 async function loadAllData() {
