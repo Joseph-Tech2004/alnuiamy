@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
   :root {
     --black: #0a0a0a;
@@ -760,8 +761,6 @@
       <input type="text" id="f-address" placeholder="الحي / المنطقة">
     </div>
     <div class="form-group">
-    </div>
-    <div class="form-group">
       <label>أقرب نقطة دالة</label>
       <input type="text" id="f-landmark" placeholder="مثال: بجانب مدرسة / جامع ...">
     </div>
@@ -944,8 +943,8 @@ function buildProductCard(p) {
       <i class="fas fa-chevron-down"></i>
     </button>
     <div class="desc-content" id="desc-${p.id}">
-      <p>${p.description || 'لا يوجد وصف متاح.'}</p>
       ${p.image_sizes ? `<img src="${p.image_sizes}" alt="أحجام العطر" class="sizes-img" loading="lazy">` : ''}
+      <p style="margin-top:${p.image_sizes?'10px':'0'}">${p.description || 'لا يوجد وصف متاح.'}</p>
     </div>
     <button class="add-to-cart" onclick="addToCart(${p.id})" id="btn-${p.id}" ${isSoldOut?'disabled':''}>
       ${isSoldOut ? '<i class="fas fa-times"></i> نفذ المخزون' : '<i class="fas fa-shopping-bag"></i> أضف للسلة'}
@@ -969,7 +968,10 @@ function filterCat(cat) {
   document.querySelectorAll('.cat-btn').forEach(b => {
     b.classList.toggle('active', b.textContent.trim() === cat || (cat==='الكل' && b.textContent.trim()==='الكل'));
   });
-  const filtered = cat === 'الكل' ? allProducts : allProducts.filter(p => p.category === cat);
+  const filtered = cat === 'الكل' ? allProducts : allProducts.filter(p => {
+    const cats = String(p.category).split(',').map(c => c.trim());
+    return cats.includes(cat);
+  });
   document.getElementById('loading').style.display = 'none';
   renderProducts(filtered);
 }
@@ -1075,13 +1077,33 @@ function confirmOrder() {
   const deliveryPrice = hasFree ? 0 : parseInt(settings.delivery_price || 5000);
   const subtotal = cart.reduce((s,c)=>s+c.price*c.qty,0);
   const grand = subtotal + deliveryPrice;
-  const itemsText = cart.map(c=>`• ${c.name} (${c.size}) ×${c.qty} — ${(c.price*c.qty).toLocaleString()} د.ع`).join('\n');
-  const msg = `🛒 *طلب جديد — النعيمي للعطور*\n\n👤 *الاسم:* ${name}\n📞 *الهاتف:* ${phone}${phone2?'\n📞 رقم احتياطي: '+phone2:''}\n🏛 *المحافظة:* ${gov}\n🏠 *العنوان:* ${address}\n${landmark?'\n📍 أقرب نقطة: '+landmark:''}\n\n🧴 *المنتجات:*\n${itemsText}\n\n🚚 التوصيل: ${hasFree?'مجاني':'5,000 د.ع'}\n💰 *الإجمالي: ${grand.toLocaleString()} د.ع*\n\n💵 الدفع عند الاستلام`;
-  const waUrl = `https://wa.me/${settings.whatsapp_number}?text=${encodeURIComponent(msg)}`;
-  window.open(waUrl, '_blank');
-  cart = []; saveCart(); updateCartUI();
-  document.getElementById('checkout-page').classList.remove('open');
-  document.getElementById('success-page').classList.add('open');
+  const itemsText = cart.map(c=>`${c.name} (${c.size}) ×${c.qty} = ${(c.price*c.qty).toLocaleString()} د.ع`).join('\n');
+
+  const btn = document.getElementById('confirm-order-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+
+  emailjs.send('service_ri9lxsc', 'template_v086qc8', {
+    customer_name: name,
+    customer_phone: phone,
+    customer_phone2: phone2 || 'لا يوجد',
+    governorate: gov,
+    address: address,
+    landmark: landmark || 'لا يوجد',
+    items: itemsText,
+    delivery: hasFree ? 'مجاني 🎉' : deliveryPrice.toLocaleString() + ' د.ع',
+    total: grand.toLocaleString() + ' د.ع',
+    payment: 'الدفع عند الاستلام'
+  }).then(() => {
+    cart = []; saveCart(); updateCartUI();
+    document.getElementById('checkout-page').classList.remove('open');
+    document.getElementById('success-page').classList.add('open');
+  }).catch((err) => {
+    console.error('Email error:', err);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check-circle"></i> تأكيد الطلب';
+    alert('حدث خطأ أثناء إرسال الطلب. حاول مجدداً.');
+  });
 }
 
 function goHome() {
@@ -1119,6 +1141,7 @@ function setLogo() {
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  emailjs.init('L5gzaRqUz-27opNzD');
   setLogo();
   loadAllData();
   updateCartUI();
