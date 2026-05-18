@@ -1076,7 +1076,7 @@ function confirmOrder() {
   const subtotal = cart.reduce((s,c)=>s+c.price*c.qty,0);
   const grand = subtotal + deliveryPrice;
   const itemsText = cart.map(c=>`• ${c.name} (${c.size}) ×${c.qty} — ${(c.price*c.qty).toLocaleString()} د.ع`).join('\n');
-  const msg = `🛒 *طلب جديد — النعيمي للعطور*\n\n👤 *الاسم:* ${name}\n📞 *الهاتف:* ${phone}${phone2?'\n📞 رقم احتياطي: '+phone2:''}\n🏛 *المحافظة:* ${gov}\n🏠 *العنوان:* ${address}\n🛣 *الشارع:* ${street}${landmark?'\n📍 أقرب نقطة: '+landmark:''}\n\n🧴 *المنتجات:*\n${itemsText}\n\n🚚 التوصيل: ${hasFree?'مجاني':'5,000 د.ع'}\n💰 *الإجمالي: ${grand.toLocaleString()} د.ع*\n\n💵 الدفع عند الاستلام`;
+  const msg = `🛒 *طلب جديد — النعيمي للعطور*\n\n👤 *الاسم:* ${name}\n📞 *الهاتف:* ${phone}${phone2?'\n📞 رقم احتياطي: '+phone2:''}\n🏛 *المحافظة:* ${gov}\n🏠 *العنوان:* ${address}\n${landmark?'\n📍 أقرب نقطة: '+landmark:''}\n\n🧴 *المنتجات:*\n${itemsText}\n\n🚚 التوصيل: ${hasFree?'مجاني':'5,000 د.ع'}\n💰 *الإجمالي: ${grand.toLocaleString()} د.ع*\n\n💵 الدفع عند الاستلام`;
   const waUrl = `https://wa.me/${settings.whatsapp_number}?text=${encodeURIComponent(msg)}`;
   window.open(waUrl, '_blank');
   cart = []; saveCart(); updateCartUI();
