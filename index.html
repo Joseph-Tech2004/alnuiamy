@@ -1068,8 +1068,7 @@ function confirmOrder() {
   const phone = document.getElementById('f-phone').value.trim();
   const gov = document.getElementById('f-gov').value;
   const address = document.getElementById('f-address').value.trim();
-  const street = document.getElementById('f-street').value.trim();
-  if (!name || !phone || !gov || !address || !street) { alert('يرجى تعبئة جميع الحقول المطلوبة *'); return; }
+  if (!name || !phone || !gov || !address) { alert('يرجى تعبئة جميع الحقول المطلوبة *'); return; }
   const phone2 = document.getElementById('f-phone2').value.trim();
   const landmark = document.getElementById('f-landmark').value.trim();
   const hasFree = cart.some(c => c.size === settings.free_delivery_size);
